@@ -2,10 +2,10 @@ import os
 import tempfile
 import time
 import uuid
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import BotCommand, Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler,
-    CallbackQueryHandler, filters, ContextTypes
+    CallbackQueryHandler, filters, ContextTypes, Application
 )
 
 import config
@@ -37,7 +37,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "👋 Hi! Send me some text or an article link and I'll read it to you as a voice note!\n\n"
         "/speed — change reading speed\n"
+        "/myid — get your Telegram user ID\n"
         "/start — show this message"
+    )
+
+
+async def myid_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if config.ALLOWED_USERS:
+        status = "✅ You are in the allowed users list." if user.id in config.ALLOWED_USERS else "❌ You are not in the allowed users list."
+    else:
+        status = "✅ Access is open to everyone."
+    await update.message.reply_text(
+        f"🔑 Your Telegram User ID is:\n\n<code>{user.id}</code>\n\n{status}",
+        parse_mode="HTML"
     )
 
 
@@ -143,16 +156,25 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     print(f"Failed to delete temp file {f_path}: {e}")
 
 
+async def post_init(application: Application) -> None:
+    await application.bot.set_my_commands([
+        BotCommand("start", "Show welcome message and instructions"),
+        BotCommand("speed", "Change reading speed — Slow / Normal / Fast / Very Fast"),
+        BotCommand("myid", "Get your Telegram user ID"),
+    ])
+
+
 if __name__ == "__main__":
     if not config.BOT_TOKEN:
         print("Please set the BOT_TOKEN environment variable.")
         exit(1)
 
     print("🚀 Starting Bot...")
-    app = ApplicationBuilder().token(config.BOT_TOKEN).build()
+    app = ApplicationBuilder().token(config.BOT_TOKEN).post_init(post_init).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("speed", speed_command))
+    app.add_handler(CommandHandler("myid", myid_command))
     app.add_handler(CallbackQueryHandler(speed_callback, pattern=r"^speed:"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
