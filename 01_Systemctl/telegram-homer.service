@@ -1,0 +1,13 @@
+    [Unit]
+    Description=Telegram Homer the Orator Bot
+    After=network.target
+
+    [Service]
+    User=ekaram
+    WorkingDirectory=/home/projects/Homer-The-Orator
+    ExecStart=/home/projects/Homer-The-Orator/.venv/bin/python bot.py
+    Restart=always
+    RestartSec=10
+
+    [Install]
+    WantedBy=multi-user.target
