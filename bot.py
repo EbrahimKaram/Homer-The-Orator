@@ -149,7 +149,7 @@ async def _generate_and_send(user_id: int, update: Update, context: ContextTypes
 
         if success and os.path.exists(ogg_path):
             with open(ogg_path, "rb") as voice_file:
-                await update.message.reply_voice(voice=voice_file)
+                await update.message.reply_voice(voice=voice_file, reply_to_message_id=update.message.message_id)
             await status_message.delete()
         else:
             await status_message.edit_text("❌ Failed to convert audio format.")
