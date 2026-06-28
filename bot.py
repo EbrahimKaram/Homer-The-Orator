@@ -2,6 +2,7 @@ import asyncio
 import os
 import tempfile
 import time
+import traceback
 import uuid
 from telegram import BotCommand, Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
@@ -148,6 +149,13 @@ async def _generate_and_send(user_id: int, update: Update, context: ContextTypes
         success = await converter.convert_wav_to_ogg(mp3_path, ogg_path)
 
         if success and os.path.exists(ogg_path):
+            size_mb = os.path.getsize(ogg_path) / (1024 * 1024)
+            if size_mb > 49:
+                await status_message.edit_text(
+                    f"❌ Audio file is too large to send ({size_mb:.1f} MB). "
+                    f"Telegram's limit is 50 MB. Try a shorter text."
+                )
+                return
             with open(ogg_path, "rb") as voice_file:
                 await update.message.reply_voice(voice=voice_file, reply_to_message_id=update.message.message_id)
             await status_message.delete()
@@ -158,8 +166,8 @@ async def _generate_and_send(user_id: int, update: Update, context: ContextTypes
         await status_message.edit_text("⏹ Generation cancelled.")
 
     except Exception as e:
-        print(f"Error handling message: {e}")
-        await status_message.edit_text("❌ An unexpected error occurred while generating speech.")
+        traceback.print_exc()
+        await status_message.edit_text(f"❌ Error: {e}")
 
     finally:
         for f_path in [mp3_path, ogg_path]:
@@ -205,7 +213,8 @@ if __name__ == "__main__":
         exit(1)
 
     print("🚀 Starting Bot...")
-    app = ApplicationBuilder().token(config.BOT_TOKEN).post_init(post_init).build()
+    # Increase the write timeout for sending large audio files (default is usually 10-30s)
+    app = ApplicationBuilder().token(config.BOT_TOKEN).write_timeout(300).read_timeout(300).post_init(post_init).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("speed", speed_command))
