@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="250" fill="#1A2A44"/>
+  
+  <!-- Golden laurel wreath - left side -->
+  <path d="M100,256 Q80,200 110,160 Q130,130 160,140 Q180,150 170,180 Q160,210 180,230 Q200,250 190,270 Q180,290 160,290 Q130,290 120,270 Q110,250 100,256Z" 
+        fill="#D4AF37" opacity="0.8"/>
+  <path d="M95,260 Q70,210 95,170 Q110,145 135,150 Q155,155 150,180 Q145,210 160,235 Q175,260 165,280 Q155,300 135,295 Q110,290 100,270 Q92,265 95,260Z" 
+        fill="#D4AF37" opacity="0.6"/>
+  
+  <!-- Golden laurel wreath - right side -->
+  <path d="M412,256 Q432,200 402,160 Q382,130 352,140 Q332,150 342,180 Q352,210 332,230 Q312,250 322,270 Q332,290 352,290 Q382,290 392,270 Q402,250 412,256Z" 
+        fill="#D4AF37" opacity="0.8"/>
+  <path d="M417,260 Q442,210 417,170 Q402,145 377,150 Q357,155 362,180 Q367,210 352,235 Q337,260 347,280 Q357,300 377,295 Q402,290 412,270 Q420,265 417,260Z" 
+        fill="#D4AF37" opacity="0.6"/>
+  
+  <!-- Vintage microphone in center -->
+  <rect x="220" y="160" width="72" height="120" rx="10" fill="#D4AF37"/>
+  <rect x="228" y="168" width="56" height="100" rx="6" fill="#1A2A44"/>
+  
+  <!-- Mic grille lines -->
+  <line x1="235" y1="185" x2="277" y2="185" stroke="#D4AF37" stroke-width="2"/>
+  <line x1="235" y1="200" x2="277" y2="200" stroke="#D4AF37" stroke-width="2"/>
+  <line x1="235" y1="215" x2="277" y2="215" stroke="#D4AF37" stroke-width="2"/>
+  <line x1="235" y1="230" x2="277" y2="230" stroke="#D4AF37" stroke-width="2"/>
+  <line x1="235" y1="245" x2="277" y2="245" stroke="#D4AF37" stroke-width="2"/>
+  
+  <!-- Mic holder arc -->
+  <path d="M200,280 Q256,310 312,280" stroke="#D4AF37" stroke-width="6" fill="none"/>
+  
+  <!-- Soundwaves from top -->
+  <path d="M230,130 Q240,115 256,120 Q272,115 282,130" stroke="#D4AF37" stroke-width="3" fill="none"/>
+  <path d="M215,115 Q230,95 256,100 Q282,95 297,115" stroke="#D4AF37" stroke-width="3" fill="none" opacity="0.7"/>
+  <path d="M200,100 Q220,75 256,80 Q292,75 312,100" stroke="#D4AF37" stroke-width="3" fill="none" opacity="0.5"/>
+  
+  <!-- Small stars/dots -->
+  <circle cx="140" cy="110" r="4" fill="#D4AF37" opacity="0.4"/>
+  <circle cx="372" cy="110" r="4" fill="#D4AF37" opacity="0.4"/>
+  <circle cx="80" cy="330" r="3" fill="#D4AF37" opacity="0.3"/>
+  <circle cx="432" cy="330" r="3" fill="#D4AF37" opacity="0.3"/>
+  
+  <!-- Text: HOMER -->
+  <text x="256" y="390" font-family="Georgia, serif" font-size="42" 
+        fill="#D4AF37" text-anchor="middle" font-weight="bold" letter-spacing="6">HOMER</text>
+  
+  <!-- Text: THE ORATOR -->
+  <text x="256" y="430" font-family="Arial, sans-serif" font-size="20" 
+        fill="#D4AF37" text-anchor="middle" letter-spacing="8" opacity="0.8">THE ORATOR</text>
+  
+  <!-- Small BOT badge -->
+  <rect x="360" y="375" width="70" height="28" rx="14" fill="#D4AF37" opacity="0.9"/>
+  <text x="395" y="395" font-family="Arial, sans-serif" font-size="14" 
+        fill="#1A2A44" text-anchor="middle" font-weight="bold">BOT</text>
+</svg>
