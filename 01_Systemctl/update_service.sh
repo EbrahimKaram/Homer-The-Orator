@@ -5,7 +5,7 @@ REPO_SERVICE_FILE="01_Systemctl/telegram-homer.service"  # Adjust path as needed
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 
 REPO_DIR="/home/projects/Homer-The-Orator"
-cd REPO_DIR || exit 1
+cd "$REPO_DIR" || exit 1
 
 # Check if the repo file exists
 if [ ! -f "${REPO_SERVICE_FILE}" ]; then
