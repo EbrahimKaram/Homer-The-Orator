@@ -1,3 +1,4 @@
+import asyncio
 import os
 import tempfile
 import time
@@ -20,6 +21,9 @@ SPEED_OPTIONS = [
     ("⚡ Very Fast", "+50%"),
 ]
 
+# Tracks the active generation task per user_id so /cancel can stop it
+_active_tasks: dict[int, asyncio.Task] = {}
+
 
 def _speed_keyboard(current: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
@@ -36,7 +40,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     await update.message.reply_text(
         "👋 Hi! Send me some text or an article link and I'll read it to you as a voice note!\n\n"
+        "Commands:\n"
         "/speed — change reading speed\n"
+        "/cancel — cancel current audio generation\n"
         "/myid — get your Telegram user ID\n"
         "/start — show this message"
     )
@@ -64,6 +70,17 @@ async def speed_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+async def cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if config.ALLOWED_USERS and update.effective_user.id not in config.ALLOWED_USERS:
+        return
+    user_id = update.effective_user.id
+    task = _active_tasks.get(user_id)
+    if task and not task.done():
+        task.cancel()
+    else:
+        await update.message.reply_text("Nothing is currently being generated.")
+
+
 async def speed_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -76,16 +93,9 @@ async def speed_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-
-    if config.ALLOWED_USERS and user_id not in config.ALLOWED_USERS:
-        print(f"Unauthorized access attempt from user {user_id}")
-        return
-
+async def _generate_and_send(user_id: int, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Runs the full extraction → TTS → send pipeline. Cancellable via asyncio task."""
     input_text = update.message.text
-    if not input_text:
-        return
 
     unique_id = uuid.uuid4()
     tmp_dir = tempfile.gettempdir()
@@ -119,12 +129,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         last_edit_time = time.time()
 
-        async def progress_callback(chunk_id):
+        async def progress_callback(current, total):
             nonlocal last_edit_time
             if time.time() - last_edit_time > 3:
                 try:
+                    pct = int(current / total * 100)
                     await status_message.edit_text(
-                        f"🗣 Language: {lang}  |  Voice: {voice}\n⏳ Generating audio... ({chunk_id} chunks)"
+                        f"🗣 Language: {lang}  |  Voice: {voice}\n⏳ Generating audio... {current}/{total} segments ({pct}%)"
                     )
                     last_edit_time = time.time()
                 except Exception:
@@ -143,6 +154,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await status_message.edit_text("❌ Failed to convert audio format.")
 
+    except asyncio.CancelledError:
+        await status_message.edit_text("⏹ Generation cancelled.")
+
     except Exception as e:
         print(f"Error handling message: {e}")
         await status_message.edit_text("❌ An unexpected error occurred while generating speech.")
@@ -154,12 +168,33 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     os.remove(f_path)
                 except Exception as e:
                     print(f"Failed to delete temp file {f_path}: {e}")
+        _active_tasks.pop(user_id, None)
+
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+
+    if config.ALLOWED_USERS and user_id not in config.ALLOWED_USERS:
+        print(f"Unauthorized access attempt from user {user_id}")
+        return
+
+    if not update.message.text:
+        return
+
+    # Cancel any in-progress generation for this user before starting a new one
+    existing = _active_tasks.get(user_id)
+    if existing and not existing.done():
+        existing.cancel()
+
+    task = asyncio.create_task(_generate_and_send(user_id, update, context))
+    _active_tasks[user_id] = task
 
 
 async def post_init(application: Application) -> None:
     await application.bot.set_my_commands([
         BotCommand("start", "Show welcome message and instructions"),
         BotCommand("speed", "Change reading speed — Slow / Normal / Fast / Very Fast"),
+        BotCommand("cancel", "Cancel the current audio generation"),
         BotCommand("myid", "Get your Telegram user ID"),
     ])
 
@@ -174,6 +209,7 @@ if __name__ == "__main__":
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("speed", speed_command))
+    app.add_handler(CommandHandler("cancel", cancel_command))
     app.add_handler(CommandHandler("myid", myid_command))
     app.add_handler(CallbackQueryHandler(speed_callback, pattern=r"^speed:"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
