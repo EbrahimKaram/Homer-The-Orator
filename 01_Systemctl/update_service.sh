@@ -28,3 +28,7 @@ sudo systemctl restart "${SERVICE_NAME}"
 
 # Show status
 sudo systemctl status "${SERVICE_NAME}" --no-pager
+
+
+# Get the journals for the bot
+# sudo journalctl -u telegram-homer -f
