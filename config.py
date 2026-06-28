@@ -26,6 +26,7 @@ VOICE_MAP = {
 # Edge-TTS Configuration
 DEFAULT_VOICE = "en-US-AriaNeural"  # Fallback voice (used when language detection fails)
 DEFAULT_SPEED = "+0%"               # Playback rate: "-25%" slow, "+0%" normal, "+25%" fast, "+50%" very fast
+TTS_CONCURRENCY = 10                  # Max parallel edge-tts requests (raise cautiously to avoid rate limits)
 # bf_isabella
 # bf_lily
 # British Male (bm_)
