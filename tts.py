@@ -1,3 +1,4 @@
+import asyncio
 import re
 import edge_tts
 from langdetect import detect, LangDetectException
@@ -59,23 +60,34 @@ async def detect_voice(text: str) -> tuple[str, str]:
 async def generate_wav(text: str, output_path: str, voice: str = None, speed: str = "+0%", progress_callback=None):
     """
     Generate audio from text and save as an MP3 file using edge-tts.
-    Auto-detects language/voice if voice is not specified.
-    speed: edge-tts rate string e.g. "+0%", "-25%", "+50%"
-    progress_callback(current, total): called after each segment is processed.
+    Segments are processed in parallel (capped by config.TTS_CONCURRENCY).
+    Results are written to the output file in original text order.
     """
     if voice is None:
         voice, _ = await detect_voice(text)
 
     segments = _split_text(text)
     total = len(segments)
+    semaphore = asyncio.Semaphore(config.TTS_CONCURRENCY)
+    completed = 0
 
-    with open(output_path, "wb") as f:
-        for i, segment in enumerate(segments, 1):
+    async def process_segment(segment: str) -> bytes:
+        nonlocal completed
+        async with semaphore:
             communicate = edge_tts.Communicate(segment, voice, rate=speed)
+            audio = bytearray()
             async for chunk in communicate.stream():
                 if chunk["type"] == "audio":
-                    f.write(chunk["data"])
-            if progress_callback:
-                await progress_callback(i, total)
+                    audio.extend(chunk["data"])
+        completed += 1
+        if progress_callback:
+            await progress_callback(completed, total)
+        return bytes(audio)
+
+    results = await asyncio.gather(*[process_segment(seg) for seg in segments])
+
+    with open(output_path, "wb") as f:
+        for audio_data in results:
+            f.write(audio_data)
 
     return output_path
