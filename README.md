@@ -1,4 +1,4 @@
-# Telegram Text-To-Voice Bot 🎙️
+# Telegram Homer The Orator Bot 🎙️
 
 A Telegram bot that converts text or article URLs into voice notes. Send it a block of text or a link and it replies with a native Telegram voice message.
 
