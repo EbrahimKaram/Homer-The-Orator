@@ -34,11 +34,26 @@ async def _track_ga_event(client_id: str, event_name: str, event_params: dict = 
 
     url = f"https://www.google-analytics.com/mp/collect?measurement_id={config.GA_MEASUREMENT_ID}&api_secret={config.GA_API_SECRET}"
     
+    params = event_params or {}
+    # GA4 requires engagement_time_msec to count active users
+    if "engagement_time_msec" not in params:
+        params["engagement_time_msec"] = "1"
+        
     payload = {
         "client_id": str(client_id),
+        # Optional: Add user_id at the root level if you want cross-device tracking
+        "user_id": str(client_id), 
+        "user_properties": {
+            "telegram_user_id": {
+                "value": str(client_id)
+            }
+        },
         "events": [{
             "name": event_name,
-            "params": event_params or {}
+            "params": {
+                "engagement_time_msec": "1",
+                **params
+            }
         }]
     }
 
