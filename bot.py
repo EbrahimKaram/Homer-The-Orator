@@ -9,6 +9,7 @@ from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler,
     CallbackQueryHandler, filters, ContextTypes, Application
 )
+import httpx
 
 import config
 import extractor
@@ -24,6 +25,28 @@ SPEED_OPTIONS = [
 
 # Tracks the active generation task per user_id so /cancel can stop it
 _active_tasks: dict[int, asyncio.Task] = {}
+
+
+async def _track_ga_event(client_id: str, event_name: str, event_params: dict = None):
+    """Sends an asynchronous tracking event to Google Analytics via Measurement Protocol."""
+    if not config.GA_MEASUREMENT_ID or not config.GA_API_SECRET:
+        return
+
+    url = f"https://www.google-analytics.com/mp/collect?measurement_id={config.GA_MEASUREMENT_ID}&api_secret={config.GA_API_SECRET}"
+    
+    payload = {
+        "client_id": str(client_id),
+        "events": [{
+            "name": event_name,
+            "params": event_params or {}
+        }]
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            await client.post(url, json=payload, timeout=5.0)
+    except Exception as e:
+        print(f"Failed to push to GA: {e}")
 
 
 def _speed_keyboard(current: str) -> InlineKeyboardMarkup:
@@ -108,11 +131,14 @@ async def _generate_and_send(user_id: int, update: Update, context: ContextTypes
 
     try:
         # 1. Extraction
-        if extractor.is_url(input_text):
+        input_type = "url" if extractor.is_url(input_text) else "text"
+        
+        if input_type == "url":
             await status_message.edit_text("🔗 Article link detected — fetching text...")
             text_to_read = extractor.extract_text(input_text)
             if text_to_read.startswith("Error"):
                 await status_message.edit_text(text_to_read)
+                asyncio.create_task(_track_ga_event(str(user_id), "generation_error", {"error_type": "extraction"}))
                 return
         else:
             await status_message.edit_text("📝 Text detected — detecting language...")
@@ -124,6 +150,14 @@ async def _generate_and_send(user_id: int, update: Update, context: ContextTypes
 
         # 2. Detect language & voice
         voice, lang = await tts.detect_voice(text_to_read)
+        
+        # Dispatch metric: start processing 
+        asyncio.create_task(_track_ga_event(str(user_id), "message_received", {
+            "text_length": len(text_to_read),
+            "input_type": input_type,
+            "language": lang
+        }))
+        
         await status_message.edit_text(
             f"🗣 Language: {lang}  |  Voice: {voice}\n⏳ Generating audio..."
         )
@@ -159,15 +193,19 @@ async def _generate_and_send(user_id: int, update: Update, context: ContextTypes
             with open(ogg_path, "rb") as voice_file:
                 await update.message.reply_voice(voice=voice_file, reply_to_message_id=update.message.message_id)
             await status_message.delete()
+            asyncio.create_task(_track_ga_event(str(user_id), "generation_success", {"language": lang}))
         else:
             await status_message.edit_text("❌ Failed to convert audio format.")
+            asyncio.create_task(_track_ga_event(str(user_id), "generation_error", {"error_type": "conversion_fail", "language": lang}))
 
     except asyncio.CancelledError:
         await status_message.edit_text("⏹ Generation cancelled.")
+        asyncio.create_task(_track_ga_event(str(user_id), "generation_cancelled", {}))
 
     except Exception as e:
         traceback.print_exc()
         await status_message.edit_text(f"❌ Error: {e}")
+        asyncio.create_task(_track_ga_event(str(user_id), "generation_error", {"error_type": "exception", "error_message": str(e)}))
 
     finally:
         for f_path in [mp3_path, ogg_path]:

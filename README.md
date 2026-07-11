@@ -7,6 +7,10 @@ A Telegram bot that converts text or article URLs into voice notes. Send it a bl
 - **Article extraction** — paste any URL and it strips out the readable content using `trafilatura`.
 - **Adjustable speed** — use `/speed` to switch between Slow / Normal / Fast / Very Fast.
 
+
+https://web.telegram.org/k/#@HomerTheOrator_bot
+![alt text](image.png)
+
 ## Prerequisites
 
 ### Linux / Raspberry Pi

@@ -8,10 +8,15 @@ load_dotenv()
 # Telegram Bot Token — set via environment variable: export BOT_TOKEN=your_token
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
+# Google Analytics (GA4) Tracking API Keys
+GA_MEASUREMENT_ID = os.getenv("GA_MEASUREMENT_ID")
+GA_API_SECRET = os.getenv("GA_API_SECRET")
+
 # List of allowed Telegram User IDs (integers). Leave empty [] to allow everyone.
-ALLOWED_USERS = [
-    6822089746
-]
+# ALLOWED_USERS = [
+#     6822089746
+# ]
+ALLOWED_USERS = []  # Empty list allows all users
 
 
 # Preferred voices for common languages. Any language not listed here
