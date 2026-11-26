@@ -96,3 +96,10 @@ python bot.py
     sudo systemctl enable telegram-tts.service
     sudo systemctl start telegram-tts.service
     ```
+
+To deploy dependency updates, run the provided update helper from the repository:
+```bash
+./01_Systemctl/update_service.sh
+```
+
+The helper installs `requirements.txt` into `.venv` before restarting the service.

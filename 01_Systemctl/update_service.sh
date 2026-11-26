@@ -13,6 +13,13 @@ if [ ! -f "${REPO_SERVICE_FILE}" ]; then
     exit 1
 fi
 
+# Refresh Python dependencies before restarting the bot.
+if [ ! -x ".venv/bin/python" ]; then
+    echo "Error: virtual environment not found at ${REPO_DIR}/.venv"
+    exit 1
+fi
+".venv/bin/python" -m pip install -r requirements.txt || exit 1
+
 # Stop the service
 sudo systemctl stop "${SERVICE_NAME}" 2>/dev/null
 

@@ -3,7 +3,8 @@
     After=network.target
 
     [Service]
-    User=ekaram
+    User=kronk
+    Group=groove
     WorkingDirectory=/home/projects/Homer-The-Orator
     ExecStart=/home/projects/Homer-The-Orator/.venv/bin/python bot.py
     Restart=always
