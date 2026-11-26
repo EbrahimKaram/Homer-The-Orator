@@ -153,6 +153,7 @@ activemq-data/
 .env
 .envrc
 .venv
+*.onnx
 env/
 venv/
 ENV/
@@ -218,3 +219,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Obsolete local TTS model artifacts
+kokoro-v1.0.int8.onnx
+voices-v1.0.bin
